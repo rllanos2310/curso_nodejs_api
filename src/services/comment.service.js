@@ -1,24 +1,15 @@
 const BaseService = require("./base.service");
-let _ideaRepository = null;
+let _commentRepository = null,
+    _ideaRepository = null;
 
-class IdeaService extends BaseService {
-    constructor({ IdeaRepository }) {
-        super(IdeaRepository);
+class CommentService extends BaseService {
+    constructor({ CommentRepository, IdeaRepository }) {
+        super(CommentRepository);
+        _commentRepository = CommentRepository;
         _ideaRepository = IdeaRepository;
     }
 
-    async getUserIdeas(author) {
-        if (!author) {
-            const error = new Error();
-            error.status = 400;
-            error.message = "userId must be sent";
-            throw error;
-        }
-
-        return await _ideaRepository.getUserIdeas(author);
-    }
-
-    async upvoteIdea(ideaId) {
+    async getIdeaComments(ideaId) {
         if (!ideaId) {
             const error = new Error();
             error.status = 400;
@@ -35,12 +26,11 @@ class IdeaService extends BaseService {
             throw error;
         }
 
-        idea.upvotes.push(true);
-
-        return await _ideaRepository.update(ideaId, { upvotes: idea.upvotes });
+        const { comments } = idea;
+        return comments;
     }
 
-    async downvoteIdea(ideaId) {
+    async createComment(comment, ideaId, userId) {
         if (!ideaId) {
             const error = new Error();
             error.status = 400;
@@ -57,10 +47,14 @@ class IdeaService extends BaseService {
             throw error;
         }
 
-        idea.downvotes.push(true);
+        const createdComment = await _commentRepository.create({
+            ...comment,
+            author: userId
+        });
+        idea.comments.push(createdComment);
 
-        return await _ideaRepository.update(ideaId, { downvotes: idea.downvotes });
+        return await _ideaRepository.update(ideaId, { comments: idea.comments });
     }
 }
 
-module.exports = IdeaService;
+module.exports = CommentService;
